@@ -5,10 +5,10 @@ from generate_signals import generate_signals
 from visualize import plot_data
 
 # Add your API keys here
-API_KEY = "3zuGkjE1EhvxOwoMndb0xxZH3"
-API_SECRET = "YNZqXgzcXehlzCEjzMbhFm4HV6EvbcBjueJ6eqGOYwBYDeSLta"
-ACCESS_TOKEN = "1875855569258504192-umuOnwgd5FNmvHE7lqqUaQxw3DhjPX"
-ACCESS_TOKEN_SECRET = "bIjUaxDLeWFJ6As4YOnjvmgZV9Y0g2x2viKyUY2ufPZQB"
+API_KEY = 
+API_SECRET = 
+ACCESS_TOKEN = 
+ACCESS_TOKEN_SECRET = 
 
 if __name__ == "__main__":
     # Fetch and analyze tweets
