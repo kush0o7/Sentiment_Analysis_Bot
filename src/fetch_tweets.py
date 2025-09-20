@@ -1,14 +1,53 @@
-import tweepy
+import os
 import json
+from datetime import datetime, timedelta, timezone
+from typing import List, Dict
+import tweepy
+from dotenv import load_dotenv
 
-def fetch_tweets(api_key, api_secret, access_token, access_token_secret, query, count=100):
-    auth = tweepy.OAuth1UserHandler(api_key, api_secret, access_token, access_token_secret)
-    api = tweepy.API(auth)
-    tweets = api.search_tweets(q=query, count=count, lang="en")
-    return [tweet.text for tweet in tweets]
+load_dotenv()
 
-if __name__ == "__main__":
-    # Test fetching tweets
-    tweets = fetch_tweets("your_api_key", "your_api_secret", "your_access_token", "your_access_token_secret", "stock market")
-    with open("../data/tweets.json", "w") as f:
-        json.dump(tweets, f)
+def fetch_tweets(query: str, max_results: int = 200, lookback_days: int = 7) -> List[Dict]:
+    """
+    ONLINE MODE:
+      Fetch recent English tweets using X/Twitter API v2 via Tweepy Client.
+      Requires .env with X_BEARER_TOKEN.
+    Returns a list of dicts: {"id","text","created_at"} in ISO8601.
+    """
+    bearer = os.getenv("X_BEARER_TOKEN")
+    if not bearer:
+        raise RuntimeError(
+            "X_BEARER_TOKEN not set. Either add it to .env for online mode "
+            "or run offline mode (see main.py)."
+        )
+
+    client = tweepy.Client(bearer_token=bearer, wait_on_rate_limit=True)
+    end_time = datetime.now(timezone.utc)
+    start_time = end_time - timedelta(days=lookback_days)
+
+    tweets: List[Dict] = []
+    while len(tweets) < max_results:
+        batch = min(100, max_results - len(tweets))
+        resp = client.search_recent_tweets(
+            query=f"({query}) lang:en -is:retweet",
+            start_time=start_time,
+            end_time=end_time,
+            max_results=batch,
+            tweet_fields=["id", "text", "created_at", "lang"]
+        )
+        if resp.data:
+            tweets.extend({
+                "id": t.id,
+                "text": t.text,
+                "created_at": t.created_at.isoformat()
+            } for t in resp.data)
+
+        if not resp.meta or not resp.meta.get("next_token"):
+            break
+
+    return tweets
+
+def save_tweets(tweets: List[Dict], path: str = "data/tweets.json") -> None:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(tweets, f, ensure_ascii=False, indent=2)

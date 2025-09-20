@@ -1,10 +1,21 @@
 from textblob import TextBlob
+from typing import List, Dict
 
-def analyze_sentiment(tweets):
-    results = []
-    for tweet in tweets:
-        analysis = TextBlob(tweet)
-        polarity = analysis.sentiment.polarity
-        sentiment = "positive" if polarity > 0 else "negative" if polarity < 0 else "neutral"
-        results.append({"tweet": tweet, "polarity": polarity, "sentiment": sentiment})
-    return results
+def analyze_sentiment_texts(texts: List[str]) -> List[Dict]:
+    """
+    Input: list of raw tweet texts
+    Output: list of dicts: {"tweet","polarity","sentiment"}
+    polarity in [-1, 1].
+    """
+    out: List[Dict] = []
+    for t in texts:
+        blob = TextBlob(t)
+        pol = float(blob.sentiment.polarity)
+        if pol > 0.1:
+            label = "positive"
+        elif pol < -0.1:
+            label = "negative"
+        else:
+            label = "neutral"
+        out.append({"tweet": t, "polarity": pol, "sentiment": label})
+    return out
