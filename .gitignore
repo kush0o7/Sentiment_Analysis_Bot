@@ -1,33 +1,21 @@
-# =========================
 # Secrets
-# =========================
 .env
 
-# =========================
-# Python / Virtualenv
-# =========================
+# Virtualenv / Python
 venv/
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
 
-# =========================
-# Data & Results (generated)
-# =========================
+# Data & generated outputs
 data/*.png
 data/*.csv
 data/*.json
 results_*.png
 
-# =========================
-# OS / Editor
-# =========================
+# Editor / OS
 .DS_Store
 .vscode/
 .idea/
-
-# =========================
-# Jupyter (if ever added)
-# =========================
 .ipynb_checkpoints/
