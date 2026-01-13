@@ -72,8 +72,8 @@ This project explores:
 
 ## 📁 Project Structure
 
+
 Sentiment_Analysis_Bot/
-│
 ├── src/
 │ ├── main.py # Pipeline entry point (CLI)
 │ ├── fetch_news.py # RSS ingestion & deduplication
@@ -92,29 +92,29 @@ Sentiment_Analysis_Bot/
 
 ---
 
+
 ## 🚀 How to Run
 
 ### 1️⃣ Clone the repository
 ```bash
 git clone https://github.com/kush007/Sentiment_Analysis_Bot.git
 cd Sentiment_Analysis_Bot
+
 ### 2️⃣ Create and activate virtual environment
-bash
-Copy code
+
 python3.11 -m venv venv
 source venv/bin/activate
+
 ### 3️⃣ Install dependencies
-bash
-Copy code
 pip install -r requirements.txt
 python -m textblob.download_corpora
+
 ### 4️⃣ Run the strategy
-bash
-Copy code
 python src/main.py --ticker AAPL --period 6mo
+
+
 Example:
 
-bash
-Copy code
 python src/main.py --ticker TSLA --period 1y --buy-th 0.02 --sell-th -0.02
-Outputs are saved in the data/ directory.
+
+
