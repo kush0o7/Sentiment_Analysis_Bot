@@ -1,36 +1,120 @@
-# Sentiment Analysis Bot
+# 📈 Sentiment Analysis Bot – News-Driven Trading Strategy
 
-This project builds a **news-driven trading strategy**:
+A **Python-based quantitative research project** that builds and backtests a **news-driven trading strategy** using free, publicly available data sources.
 
-* Collects market-related headlines from multiple **free RSS feeds** (Yahoo Finance, Google News, CNBC, Motley Fool, Investing.com, etc.).
-* Uses **TextBlob** to score the sentiment of each headline.
-* Aggregates sentiment by day and smooths it to reduce noise.
-* Aligns the sentiment series with stock-market trading days and generates **Buy / Sell / Hold** signals based on configurable thresholds.
-* Backtests the signals against free historical price data (Yahoo Finance / Stooq fallback) and plots the resulting equity curve.
+The system ingests financial news headlines, performs **sentiment analysis**, converts sentiment into **trading signals**, and evaluates performance via a **backtesting engine**.
 
-Everything runs with **free data sources**—no paid API keys required.
+> ⚠️ This project is for **research and educational purposes only**. It does not constitute financial advice.
+
+---
+
+## 🔍 Problem Statement
+
+Market news influences short-term price movements, but raw headlines are noisy and unstructured.
+
+This project explores:
+- Can **aggregate news sentiment** be transformed into **systematic trading signals**?
+- How does a sentiment-based strategy perform compared to passive exposure?
+- What are the limitations of free data and simple NLP methods in trading?
+
+---
+
+## 🧠 Approach & Pipeline
+
+1. **News Ingestion**
+   - Collects headlines from **free RSS feeds** (Yahoo Finance, CNBC, etc.)
+   - Deduplicates repeated headlines across sources
+
+2. **Sentiment Analysis**
+   - Uses **TextBlob** to score headline polarity
+   - Aggregates sentiment **daily** and applies smoothing
+
+3. **Signal Generation**
+   - Converts sentiment into **Buy / Sell / Hold**
+   - Configurable thresholds, smoothing window, and minimum headline count
+
+4. **Backtesting**
+   - Uses historical prices from **Yahoo Finance**
+   - Automatic fallback to **Stooq** when Yahoo data is unavailable
+   - Computes performance metrics:
+     - Total Return
+     - CAGR
+     - Sharpe Ratio
+     - Max Drawdown
+     - Trade Count
+
+5. **Visualization**
+   - Plots price series with Buy/Sell markers
+   - Saves results for offline inspection
 
 ---
 
 ## ✨ Features
-- **Free data pipeline** – Fetches and deduplicates headlines from multiple RSS feeds.
-- **Daily sentiment aggregation** – Smooths sentiment scores and filters out low-headline days.
-- **Signal generation** – Creates Buy/Sell/Hold signals with adjustable thresholds, smoothing window, and headline-count minimum.
-- **Backtesting** – Computes total return, CAGR, Sharpe ratio, max drawdown, trade count, and plots price with trade markers.
-- **Configurable** – Command-line options let you tune thresholds, smoothing, and training window.
+
+- 📡 **Fully free data pipeline** (no paid APIs required)
+- 🧪 **Research-grade backtesting engine**
+- 🔁 **Configurable strategy parameters**
+- 📊 **Clear visual outputs**
+- 🧱 **Modular, extensible architecture**
 
 ---
 
-## 🛠 Requirements
-- Python **3.11+**
-- See [`requirements.txt`](requirements.txt) for the full list of Python dependencies  
-  (main libraries: `pandas`, `numpy`, `textblob`, `feedparser`, `matplotlib`, `requests`).
+## 🛠 Tech Stack
+
+- **Python 3.11**
+- pandas, numpy
+- TextBlob (NLP)
+- feedparser, requests (data ingestion)
+- yfinance + Stooq fallback (market data)
+- matplotlib (visualization)
 
 ---
 
-## 🚀 Installation
+## 📁 Project Structure
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-repo/sentiment-analysis-bot.git
-   cd sentiment-analysis-bot
+Sentiment_Analysis_Bot/
+│
+├── src/
+│ ├── main.py # Pipeline entry point (CLI)
+│ ├── fetch_news.py # RSS ingestion & deduplication
+│ ├── fetch_tweets.py # Optional Twitter/X ingestion
+│ ├── sentiment_analysis.py # TextBlob sentiment scoring
+│ ├── generate_signals.py # Signal logic
+│ ├── backtest.py # Backtesting engine
+│ ├── stock_data.py # Market data fetch + fallback
+│ └── visualize.py # Plotting utilities
+│
+├── data/ # Generated outputs (ignored by git)
+├── requirements.txt
+├── README.md
+└── .gitignore
+
+
+---
+
+## 🚀 How to Run
+
+### 1️⃣ Clone the repository
+```bash
+git clone https://github.com/kush007/Sentiment_Analysis_Bot.git
+cd Sentiment_Analysis_Bot
+2️⃣ Create and activate virtual environment
+bash
+Copy code
+python3.11 -m venv venv
+source venv/bin/activate
+3️⃣ Install dependencies
+bash
+Copy code
+pip install -r requirements.txt
+python -m textblob.download_corpora
+4️⃣ Run the strategy
+bash
+Copy code
+python src/main.py --ticker AAPL --period 6mo
+Example:
+
+bash
+Copy code
+python src/main.py --ticker TSLA --period 1y --buy-th 0.02 --sell-th -0.02
+Outputs are saved in the data/ directory.
