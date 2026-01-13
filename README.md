@@ -98,17 +98,17 @@ Sentiment_Analysis_Bot/
 ```bash
 git clone https://github.com/kush007/Sentiment_Analysis_Bot.git
 cd Sentiment_Analysis_Bot
-2️⃣ Create and activate virtual environment
+### 2️⃣ Create and activate virtual environment
 bash
 Copy code
 python3.11 -m venv venv
 source venv/bin/activate
-3️⃣ Install dependencies
+### 3️⃣ Install dependencies
 bash
 Copy code
 pip install -r requirements.txt
 python -m textblob.download_corpora
-4️⃣ Run the strategy
+### 4️⃣ Run the strategy
 bash
 Copy code
 python src/main.py --ticker AAPL --period 6mo
