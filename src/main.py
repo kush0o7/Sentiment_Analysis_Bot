@@ -1,29 +1,12 @@
 # src/main.py
-import os
-import json
+from pathlib import Path
 from typing import Optional
 
-# dotenv is optional; if present it will load .env into os.environ
-try:
-    from dotenv import load_dotenv  # type: ignore
-    load_dotenv()
-except Exception:
-    pass
-
-# safe env config (don't hardcode secrets here)
-API_KEY = os.getenv("API_KEY")
-API_SECRET = os.getenv("API_SECRET")
-ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
-ACCESS_TOKEN_SECRET = os.getenv("ACCESS_TOKEN_SECRET")
-X_BEARER_TOKEN = os.getenv("X_BEARER_TOKEN")  # optional if you use tweets
-
-# project imports (these are your modules)
 from fetch_news import fetch_multi_feeds, save_news
-from sentiment_analysis import analyze_sentiment_texts
+from sentiment_analysis import score_items
 from stock_data import fetch_stock_data
 from generate_signals import daily_sentiment_aggregate, generate_signals
 from backtest import backtest_signals, grid_search
-# your file is named "visualiz.py" in the repo; import accordingly
 from visualize import plot_data
 
 # local helper: small safe default feeds list (replace with feeds you like)
@@ -33,6 +16,9 @@ def _default_feeds_for(ticker: str) -> list:
         f"https://finance.yahoo.com/rss/headline?s={ticker}",
         # you can add more reliable RSS URLs here, e.g. CNBC/Investing/etc.
     ]
+
+DATA_DIR = Path("data")
+
 
 def run(
     ticker: str = "AAPL",
@@ -55,8 +41,6 @@ def run(
       5) generate signals
       6) backtest and plot
     """
-    from textblob import TextBlob  # local import so requirements are only needed when running
-
     # 1) build feed list
     if feeds:
         feed_list = [u.strip() for u in feeds.split(",") if u.strip()]
@@ -69,22 +53,12 @@ def run(
         print("No news items found from feeds. Try passing --feeds with URLs or use tweet-mode.")
         return
 
-    # 2) analyze sentiment on each title using TextBlob (ensures created_at preserved)
-    scored_items = []
-    for it in items:
-        title = (it.get("title") or "").strip()
-        created_at = it.get("created_at", None)
-        if not title:
-            continue
-        pol = float(TextBlob(title).sentiment.polarity)
-        scored_items.append({
-            "polarity": pol,
-            "created_at": created_at,
-        })
+    # 2) analyze sentiment on each title (keeps created_at)
+    scored_items = score_items(items, text_key="title")
 
     # optional: save raw scored items for inspection
     try:
-        save_news(scored_items, "data/scored_headlines.json")
+        save_news(scored_items, str(DATA_DIR / "scored_headlines.json"))
     except Exception:
         pass
 
@@ -124,7 +98,7 @@ def run(
         daily_count=daily_count
     )
 
-        # 7) backtest and report
+    # 7) backtest and report
     res, result_df = backtest_signals(out_df, price_col="Close", signal_col="signal")
     print("Backtest results:")
     print(f" Total return: {res.total_return}")
@@ -134,17 +108,17 @@ def run(
     print(f" Trades: {res.trades}")
 
     # Ensure data directory exists
-    os.makedirs("data", exist_ok=True)
+    DATA_DIR.mkdir(exist_ok=True)
 
     # 8) plot & save inside data/
-    plot_path = os.path.join("data", f"results_{ticker}.png")
+    plot_path = DATA_DIR / f"results_{ticker}.png"
     try:
-        plot_data(result_df, save_path=plot_path)
+        plot_data(result_df, save_path=str(plot_path))
         print("Saved plot to", plot_path)
     except Exception as e:
         print("Plotting failed:", e)
         # fallback: save CSV to data/
-        csv_path = os.path.join("data", f"results_{ticker}.csv")
+        csv_path = DATA_DIR / f"results_{ticker}.csv"
         result_df.to_csv(csv_path)
         print(f"Wrote results CSV to {csv_path}")
 

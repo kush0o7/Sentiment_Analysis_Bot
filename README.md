@@ -99,6 +99,7 @@ Sentiment_Analysis_Bot/
 ```bash
 git clone https://github.com/kush007/Sentiment_Analysis_Bot.git
 cd Sentiment_Analysis_Bot
+```
 
 ### 2️⃣ Create and activate virtual environment
 
@@ -116,5 +117,5 @@ python src/main.py --ticker AAPL --period 6mo
 Example:
 
 python src/main.py --ticker TSLA --period 1y --buy-th 0.02 --sell-th -0.02
-
+```
 
