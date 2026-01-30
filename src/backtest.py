@@ -12,18 +12,8 @@ class BTResult:
     max_dd: float
     trades: int
 
-def _equity_curve(price: pd.Series, signal: pd.Series, fee_bp: float = 0.0) -> pd.Series:
-    """
-    Simple daily close-to-close backtest:
-      - Long when signal == "Buy"
-      - Flat when signal == "Sell" (exit to cash)
-      - Otherwise keep previous exposure
-    Transaction cost modeled as basis points on position flip.
-    """
-    price = price.astype(float)
+def _exposure_from_signal(signal: pd.Series) -> pd.Series:
     signal = signal.astype(str)
-
-    # convert discrete signals to exposure (0 or 1)
     exp = []
     pos = 0
     for s in signal:
@@ -34,8 +24,19 @@ def _equity_curve(price: pd.Series, signal: pd.Series, fee_bp: float = 0.0) -> p
             if pos == 1:
                 pos = 0
         exp.append(pos)
+    return pd.Series(exp, index=signal.index, dtype=float)
 
-    exp = pd.Series(exp, index=price.index, dtype=float)
+
+def _equity_curve(price: pd.Series, signal: pd.Series, fee_bp: float = 0.0) -> pd.Series:
+    """
+    Simple daily close-to-close backtest:
+      - Long when signal == "Buy"
+      - Flat when signal == "Sell" (exit to cash)
+      - Otherwise keep previous exposure
+    Transaction cost modeled as basis points on position flip.
+    """
+    price = price.astype(float)
+    exp = _exposure_from_signal(signal)
 
     ret = price.pct_change().fillna(0.0)
 
@@ -63,7 +64,8 @@ def _metrics(equity: pd.Series, freq: int = 252) -> Dict:
 def backtest_signals(df: pd.DataFrame, price_col="Close", signal_col="signal", fee_bp: float = 5.0) -> Tuple[BTResult, pd.DataFrame]:
     equity = _equity_curve(df[price_col], df[signal_col], fee_bp=fee_bp)
     m = _metrics(equity)
-    trades = int((df[signal_col].shift(1) != df[signal_col]).sum())  # rough count
+    exp = _exposure_from_signal(df[signal_col])
+    trades = int((exp.diff().abs() > 0).sum())
     res = BTResult(total_return=m["total_return"], cagr=m["cagr"], sharpe=m["sharpe"], max_dd=m["max_dd"], trades=trades)
     out = df.copy()
     out["equity"] = equity

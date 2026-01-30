@@ -2,6 +2,7 @@
 from __future__ import annotations
 from typing import List, Dict, Iterable
 from datetime import datetime
+from urllib.parse import quote
 import hashlib, json, os, time
 
 import feedparser
@@ -18,6 +19,15 @@ UA = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
     "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
 )
+
+
+def google_news_rss_url(query: str, days: int = 7) -> str:
+    """
+    Build a Google News RSS search URL for the given query.
+    Example: https://news.google.com/rss/search?q=apple+when:7d&hl=en-US&gl=US&ceid=US:en
+    """
+    q = quote(f"{query} when:{days}d")
+    return f"https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en"
 
 # ---------- date parsing helpers ----------
 

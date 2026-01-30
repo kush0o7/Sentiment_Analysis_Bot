@@ -26,6 +26,8 @@ def fetch_tweets(query: str, max_results: int = 200, lookback_days: int = 7) -> 
     start_time = end_time - timedelta(days=lookback_days)
 
     tweets: List[Dict] = []
+    seen_ids = set()
+    next_token = None
     while len(tweets) < max_results:
         batch = min(100, max_results - len(tweets))
         resp = client.search_recent_tweets(
@@ -33,17 +35,25 @@ def fetch_tweets(query: str, max_results: int = 200, lookback_days: int = 7) -> 
             start_time=start_time,
             end_time=end_time,
             max_results=batch,
-            tweet_fields=["id", "text", "created_at", "lang"]
+            tweet_fields=["id", "text", "created_at", "lang"],
+            next_token=next_token,
         )
         if resp.data:
-            tweets.extend({
-                "id": t.id,
-                "text": t.text,
-                "created_at": t.created_at.isoformat()
-            } for t in resp.data)
+            for t in resp.data:
+                if t.id in seen_ids:
+                    continue
+                seen_ids.add(t.id)
+                tweets.append(
+                    {
+                        "id": t.id,
+                        "text": t.text,
+                        "created_at": t.created_at.isoformat(),
+                    }
+                )
 
         if not resp.meta or not resp.meta.get("next_token"):
             break
+        next_token = resp.meta.get("next_token")
 
     return tweets
 

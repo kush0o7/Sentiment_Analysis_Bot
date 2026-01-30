@@ -5,6 +5,34 @@ import pandas as pd
 import yfinance as yf
 import requests
 
+_PERIOD_MULTIPLIERS = {
+    "d": 1,
+    "wk": 7,
+    "mo": 30,
+    "y": 365,
+}
+
+
+def _period_to_days(period: str) -> int | None:
+    """
+    Convert a Yahoo-style period string to an approximate day count.
+    Examples: 60d, 6mo, 1y. Returns None for "max" or unknown formats.
+    """
+    if not period:
+        return None
+    p = period.strip().lower()
+    if p == "max":
+        return None
+    for unit, mult in _PERIOD_MULTIPLIERS.items():
+        if p.endswith(unit):
+            try:
+                n = int(p[: -len(unit)])
+            except ValueError:
+                return None
+            return n * mult
+    return None
+
+
 def _yf_history(ticker: str, period: str):
     df = yf.Ticker(ticker).history(period=period, auto_adjust=False)
     df.index = pd.to_datetime(df.index)
@@ -31,8 +59,9 @@ def _stooq_download(ticker: str, days: int = 365) -> pd.DataFrame:
         return pd.DataFrame()
     df["Date"] = pd.to_datetime(df["Date"])
     # Keep only recent window
-    cutoff = pd.Timestamp(datetime.utcnow().date() - timedelta(days=days))
-    df = df[df["Date"] >= cutoff]
+    if days:
+        cutoff = pd.Timestamp(datetime.utcnow().date() - timedelta(days=days))
+        df = df[df["Date"] >= cutoff]
     df = df.set_index("Date").sort_index()
     # Match yfinance column names
     df = df.rename(columns={"Open": "Open", "High": "High", "Low": "Low",
@@ -51,9 +80,10 @@ def fetch_stock_data(ticker: str, period: str = "3mo") -> pd.DataFrame:
     except Exception as e:
         print(f"Failed to get ticker '{ticker}' via Yahoo: {e}")
 
-    # 2) Stooq fallback (~last 365 days)
+    # 2) Stooq fallback (approximate period window)
     try:
-        df = _stooq_download(ticker, days=365)
+        days = _period_to_days(period) or 365
+        df = _stooq_download(ticker, days=days)
         if not df.empty and "Close" in df.columns:
             return df
         else:

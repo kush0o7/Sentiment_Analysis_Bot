@@ -2,7 +2,7 @@
 from pathlib import Path
 from typing import Optional
 
-from fetch_news import fetch_multi_feeds, save_news
+from fetch_news import fetch_multi_feeds, save_news, google_news_rss_url
 from sentiment_analysis import score_items
 from stock_data import fetch_stock_data
 from generate_signals import daily_sentiment_aggregate, generate_signals
@@ -14,7 +14,7 @@ def _default_feeds_for(ticker: str) -> list:
     # NOTE: many financial sites change RSS formats. Replace with feeds you trust.
     return [
         f"https://finance.yahoo.com/rss/headline?s={ticker}",
-        # you can add more reliable RSS URLs here, e.g. CNBC/Investing/etc.
+        google_news_rss_url(ticker, days=7),
     ]
 
 DATA_DIR = Path("data")
@@ -31,6 +31,7 @@ def run(
     smooth_window: int = 3,
     min_count: int = 2,
     feeds: Optional[str] = None,   # comma-separated feed URLs
+    sentiment_model: str = "vader",
 ):
     """
     Orchestrate the pipeline:
@@ -54,7 +55,7 @@ def run(
         return
 
     # 2) analyze sentiment on each title (keeps created_at)
-    scored_items = score_items(items, text_key="title")
+    scored_items = score_items(items, text_key="title", model=sentiment_model)
 
     # optional: save raw scored items for inspection
     try:
@@ -68,8 +69,8 @@ def run(
     # 4) get price data
     print(f"Fetching price data for {ticker} period={period} ...")
     stock_df = fetch_stock_data(ticker, period=period)
-    if stock_df.empty:
-        print("Failed to fetch price data for", ticker)
+    if stock_df.empty or len(stock_df) < 2:
+        print("Failed to fetch enough price data for", ticker)
         return
 
     # 5) optionally optimize parameters using grid search (requires train_end)
@@ -89,6 +90,8 @@ def run(
             sell_th = best.get("sell", sell_th)
             smooth_window = int(best.get("smooth", smooth_window))
             min_count = int(best.get("min_count", min_count))
+    elif optimize and not train_end:
+        print("Optimization skipped: please pass --train-end YYYY-MM-DD.")
 
     # 6) generate signals on the full stock_df
     out_df = generate_signals(
@@ -137,6 +140,7 @@ if __name__ == "__main__":
     p.add_argument("--smooth", type=int, default=3)
     p.add_argument("--min-count", type=int, default=2)
     p.add_argument("--feeds", default=None, help="Comma-separated RSS feed URLs to use instead of defaults")
+    p.add_argument("--sentiment-model", default="vader", help="Sentiment model: vader or textblob")
 
     args = p.parse_args()
 
@@ -151,4 +155,5 @@ if __name__ == "__main__":
         smooth_window=args.smooth,
         min_count=args.min_count,
         feeds=args.feeds,
+        sentiment_model=args.sentiment_model,
     )

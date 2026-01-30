@@ -1,6 +1,9 @@
 from typing import List, Dict
 
 from textblob import TextBlob
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+
+_VADER = SentimentIntensityAnalyzer()
 
 
 def _label_for_polarity(pol: float) -> str:
@@ -10,7 +13,15 @@ def _label_for_polarity(pol: float) -> str:
         return "negative"
     return "neutral"
 
-def analyze_sentiment_texts(texts: List[str]) -> List[Dict]:
+def _score_text(text: str, model: str) -> float:
+    if model == "textblob":
+        return float(TextBlob(text).sentiment.polarity)
+    if model == "vader":
+        return float(_VADER.polarity_scores(text)["compound"])
+    raise ValueError(f"Unknown sentiment model: {model}")
+
+
+def analyze_sentiment_texts(texts: List[str], model: str = "vader") -> List[Dict]:
     """
     Input: list of raw tweet texts
     Output: list of dicts: {"tweet","polarity","sentiment"}
@@ -18,13 +29,12 @@ def analyze_sentiment_texts(texts: List[str]) -> List[Dict]:
     """
     out: List[Dict] = []
     for t in texts:
-        blob = TextBlob(t)
-        pol = float(blob.sentiment.polarity)
+        pol = _score_text(t, model)
         out.append({"tweet": t, "polarity": pol, "sentiment": _label_for_polarity(pol)})
     return out
 
 
-def score_items(items: List[Dict], text_key: str = "title") -> List[Dict]:
+def score_items(items: List[Dict], text_key: str = "title", model: str = "vader") -> List[Dict]:
     """
     Score a list of items that carry text + optional created_at timestamp.
 
@@ -38,7 +48,7 @@ def score_items(items: List[Dict], text_key: str = "title") -> List[Dict]:
         text = (it.get(text_key) or "").strip()
         if not text:
             continue
-        pol = float(TextBlob(text).sentiment.polarity)
+        pol = _score_text(text, model)
         out.append(
             {
                 "polarity": pol,

@@ -64,7 +64,9 @@ This project explores:
 - **Python 3.11**
 - pandas, numpy
 - TextBlob (NLP)
+- VADER sentiment (default)
 - feedparser, requests (data ingestion)
+- python-dotenv (optional Twitter/X ingestion)
 - yfinance + Stooq fallback (market data)
 - matplotlib (visualization)
 
@@ -119,3 +121,45 @@ Example:
 python src/main.py --ticker TSLA --period 1y --buy-th 0.02 --sell-th -0.02
 ```
 
+---
+
+## 🌐 Frontend (TypeScript)
+
+A lightweight React + TypeScript UI lives in `frontend/`. It reads CSVs from
+`frontend/public/data` (populated from `data/*_merged.csv`).
+
+### Run the frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Run the live API (optional)
+```bash
+pip install -r requirements.txt
+python src/api.py
+```
+
+The frontend will automatically try `/api/data` and fall back to CSVs if the API
+is not running.
+
+### SEC data (required for holdings/insiders)
+Set a User-Agent string so SEC requests are accepted:
+```bash
+export SEC_USER_AGENT="SentimentAnalysisBot/1.0 you@email.com"
+```
+
+### Update data shown in the UI
+```bash
+cp data/*_merged.csv frontend/public/data/
+```
+
+### Sentiment model (default: VADER)
+```bash
+python src/main.py --ticker AAPL --sentiment-model vader
+```
+
+### Optional: Twitter/X sentiment (requires API access)
+- Set `X_BEARER_TOKEN` in a `.env` file at the repo root.
+- Use `src/fetch_tweets.py` to collect tweets, then pass them through `sentiment_analysis.py`.
